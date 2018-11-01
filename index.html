@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta http-equiv="X-UA-Compatible" content="ie=edge"> -->
+    <title>Document</title>
+    <script src="js/jquery1.7.2.js"></script>
+    <script src="js/recorder.js"> </script>
+    <script src="js/wavesurfer.min.js"></script>
+</head>
+
+<body>
+    <div id='recorder-btn' style="border:1px solid green;padding:2px 4px;display: inline-block">长按我录音~
+    </div>
+    <div class="audio"></div>
+    <div class="waveContainer"></div>
+    <script>
+        var wavesurfer = WaveSurfer.create({
+            msDisplayMax: 10,
+            debug: true,
+            waveColor: 'grey',
+            progressColor: 'black',
+            cursorColor: 'white',
+            hideScrollbar: true,
+            container: '.waveContainer',
+        });
+       
+        /*wavesurfer.on("ready",function () {
+           
+            var a = wavesurfer.exportImage('image/png',1);
+            console.log(a);
+        });*/
+  
+
+        var audio_context;
+        var recorder;
+        $('#recorder-btn').on("mousedown", function () {
+            recorder && recorder.record();
+            console.log("start at time + " + (new Date().getTime()));
+        });
+        $('#recorder-btn').on("mouseup", function () {
+            recorder && recorder.stop();
+            console.log("stop at time + " + (new Date().getTime()));
+            recorder && recorder.exportWAV(function (blob) {
+                var url = URL.createObjectURL(blob);
+				wavesurfer.load(audioFile);
+                var au = document.createElement('audio');
+                var hf = document.createElement('a');
+
+                au.controls = true;
+                au.src = url;
+                hf.href = url;
+                hf.download = new Date().toISOString() + '.pcm';
+                hf.innerHTML = hf.download;
+
+                $('.audio').empty();
+                $('.audio').append(au);
+                $('.audio').append(hf);
+            },"pcm");
+        });
+
+        window.onload = function init() {
+            try {
+                // webkit shim
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+                window.URL = window.URL || window.webkitURL;
+
+                audio_context = new AudioContext;
+                console.log('Audio context set up.');
+                console.log('navigator.getUserMedia ' + (navigator.getUserMedia ? 'available.' : 'not present!'));
+            } catch (e) {
+                alert('No web audio support in this browser!');
+            }
+
+            navigator.getUserMedia({ audio: true }, function(stream){
+                var input = audio_context.createMediaStreamSource(stream);
+                console.log('Media stream created.');
+                recorder = new Recorder(input);
+                console.log('Recorder initialised.');
+            }, function (e) {
+                console.log('No live audio input: ' + e);
+            });
+        };
+    </script>
+</body>
+
+</html>
